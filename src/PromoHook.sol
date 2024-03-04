@@ -45,6 +45,8 @@ contract PromoHook is AlgebraPlugin, Ownable {
     }
 
     function prepareDiscount(int256 amountRequired, address recipient, bool zeroToOne, uint16 newFeeBps, bytes calldata signature) external payable {
+        //promo fee should be less than current to prevent DoS attack from rogue signer
+        require(newFeeBps < myFee, "PromoHook: new fee should be less than current");
         bytes32 discountHash = keccak256(abi.encodePacked(amountRequired, recipient, zeroToOne, block.number));
         discounts[discountHash] = SignedDiscount(newFeeBps, signature);
     }
