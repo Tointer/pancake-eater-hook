@@ -1,18 +1,6 @@
-## Foundry hackathon experience inspired starter
+## THENA promo fee hook
 
-Deleting things is easier than installing them, so this starter goal is to be bulky but cover most potential projects
-
-## Installed libraries
-
-* Solmate
-* Open Zeppelin contracts
-
-## Mocks
-
-* ERC20: public mint, burn, permit
-* ERC721: enumerable, public mint, burn
-
-## Usage
+This plugin allowing THENA pools to reduce trading fee of certain trades
 
 ### Build
 
