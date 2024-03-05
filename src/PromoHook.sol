@@ -13,7 +13,7 @@ contract PromoHook is AlgebraPlugin, Ownable {
 
     struct SignedDiscount {
         uint16 newFeeBps;
-        bytes signature;
+        bool active;
     }
 
     PluginConfig private constant _defaultPluginConfig = PluginConfig.wrap(1); // dynamic fees enabled
@@ -40,7 +40,7 @@ contract PromoHook is AlgebraPlugin, Ownable {
         promoSigner = _promoSigner;
     }
 
-    function passSignerRole(address _promoSigner) external onlyOwner {
+    function changeSignerRole(address _promoSigner) external onlyOwner {
         promoSigner = _promoSigner;
     }
 
@@ -48,7 +48,9 @@ contract PromoHook is AlgebraPlugin, Ownable {
         //promo fee should be less than current to prevent DoS attack from rogue signer
         require(newFeeBps < myFee, "PromoHook: new fee should be less than current");
         bytes32 discountHash = keccak256(abi.encodePacked(amountRequired, recipient, zeroToOne, block.number));
-        discounts[discountHash] = SignedDiscount(newFeeBps, signature);
+        require(ECDSA.recover(discountHash, signature) == promoSigner, "PromoHook: invalid signature");
+
+        discounts[discountHash] = SignedDiscount(newFeeBps, true);
     }
 
     /// @notice The hook called before a swap
@@ -72,9 +74,9 @@ contract PromoHook is AlgebraPlugin, Ownable {
     ) external override returns (bytes4){
         bytes32 discountHash = keccak256(abi.encodePacked(amountRequired, recipient, zeroToOne, block.number));
         SignedDiscount memory discount = discounts[discountHash];
-        if(discount.signature.length != 0) {
-            require(ECDSA.recover(discountHash, discount.signature) == promoSigner, "PromoHook: invalid signature");
+        if(discount.active) {
             PoolInteraction.changeFeeIfNeeded(pool, discount.newFeeBps);
+            delete discounts[discountHash];
         } 
 
         return IAlgebraPlugin.beforeSwap.selector;
